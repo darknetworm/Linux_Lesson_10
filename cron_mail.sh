@@ -1,15 +1,7 @@
 #!/bin/bash
 
-# запускаем единственный экземпляр, предотвращая одновременный запуск нескольких копий
-lockfile=/tmp/main_lockfile
-if (set -o noclobber; echo "$$" >> "lockfile") 2>/dev/null
-then
-	trap 'echo Процесс выполняется, остановить нельзя' INT
-	trap 'rm -f "$lockfile"; exit $?' TERM EXIT
-else
-	echo "Невозможно получить доступ к файлу $lockfile"
-	echo "Файл используется процессом $(cat$lockfile)"
-fi
+# определяем файл, необходимый для запуска единственного экземпляра скрипта
+lockfile=/tmp/report.txt
 
 # определяем текущую дату в нужном форматe
 date_now="$(date -R)"
@@ -48,3 +40,13 @@ awk '{print $9}' /tmp/data.txt | sort | uniq -c | sort -rn >> /tmp/report.txt
 
 # отправляем файл по электронной почте на заданную почту и стираем временные файлы
 cat /tmp/report.txt | mail -s "hourly report" user@example.iq && rm /tmp/data.txt /tmp/report.txt
+
+# зпроверяем, что скрипт запущен в единственном экземпляре
+if (set -o noclobber; echo "$$" >> "lockfile") 2>/dev/null
+then
+	trap 'echo Процесс выполняется, остановить нельзя' INT
+	trap 'rm -f "$lockfile"; exit $?' TERM EXIT
+else
+	echo "Невозможно получить доступ к файлу $lockfile"
+	echo "Файл используется процессом $(cat$lockfile)"
+fi
